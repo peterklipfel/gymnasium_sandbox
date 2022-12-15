@@ -17,8 +17,6 @@ import gymnasium as gym
 ## OOPy bits
 from abc import ABC, abstractmethod
 
-env = gym.make("CartPole-v1")
-observation, info = env.reset()
 
 # Network Architecture
 num_inputs = 4
@@ -29,13 +27,11 @@ num_outputs = 2
 num_steps = 25
 beta = 0.95
 
-total_reward_for_run = 0 # the reward algo for cartpole is +1 for every tick that the pole is not reset. We need to track this manually. I would have expected gymnasium to do that for us, but it doesn't
 
 # ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE = ['left', 'right', 'random', 'wiggle']
 # run_lengths = {ONLY_LEFT: [], ONLY_RIGHT: [], RANDOM: [], WIGGLE: []}
 
 ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE = [0, 1, 2, 3]
-run_lengths = [[], [], [], []]
 
 class Agent(ABC):
     @abstractmethod
@@ -43,8 +39,20 @@ class Agent(ABC):
         raise(f'{cls} does not implement #action method')
 
 
+class SNNAgent(Agent):
+    def action(obserfation, reward=None):
+        return 1
 
-for policy in [ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE]:
+def run_env_with_policy(env, policy):
+    # the reward algo for cartpole is +1 for every tick that the pole is not
+    # reset. We need to track this manually. I would have expected gymnasium
+    # to do that for us, but it doesn't
+    total_reward_for_run = 0 
+
+    run_lengths = []
+
+    observation, info = env.reset()
+
     for _ in range(1000):
 
         if policy == ONLY_LEFT:
@@ -66,12 +74,23 @@ for policy in [ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE]:
 
         total_reward_for_run += reward
         if terminated:
-            run_lengths[policy].append(total_reward_for_run)
+            run_lengths.append(total_reward_for_run)
             total_reward_for_run = 0
         
         if terminated or truncated:
             observation, info = env.reset()
+    return run_lengths
 
-print(run_lengths)
+def multi_run(policies):
+    env = gym.make("CartPole-v1")
+    run_lengths = []
 
-env.close()
+    for policy in policies:
+        policy_run_lengths = run_env_with_policy(env, policy)
+        run_lengths.append(policy_run_lengths)
+
+    print(run_lengths)
+
+    env.close()
+
+multi_run([ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE])
