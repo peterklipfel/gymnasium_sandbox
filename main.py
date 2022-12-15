@@ -34,40 +34,53 @@ beta = 0.95
 ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE = [0, 1, 2, 3]
 
 class Agent(ABC):
+    def __init__(self, env):
+        self.env = env
+        super().__init__()
+
     @abstractmethod
     def action(observation, reward=None):
         raise(f'{cls} does not implement #action method')
 
 
 class SNNAgent(Agent):
-    def action(obserfation, reward=None):
+    def action(self, observation, reward=None):
         return 1
 
-def run_env_with_policy(env, policy):
+class LeftAgent(Agent):
+    def action(self, observation, reward=None):
+        return 0
+
+class RightAgent(Agent):
+    def action(self, observation, reward=None):
+        return 0
+
+class RandomAgent(Agent):
+    def action(self, observation, reward=None):
+        return self.env.action_space.sample()
+
+class WiggleAgent(Agent):
+    def action(self, observation, reward=None):
+        if observation[2] > 0:
+            return 1
+        else:
+            return 0
+
+def run_env_with_agent(env, agent_class):
+    agent = agent_class(env)
+
     # the reward algo for cartpole is +1 for every tick that the pole is not
     # reset. We need to track this manually. I would have expected gymnasium
     # to do that for us, but it doesn't
     total_reward_for_run = 0 
 
     run_lengths = []
-
     observation, info = env.reset()
+    reward = None
 
     for _ in range(1000):
 
-        if policy == ONLY_LEFT:
-            action = 0
-        elif policy == ONLY_RIGHT:
-            action = 1
-        elif policy == RANDOM:
-            action = env.action_space.sample()
-        elif policy == WIGGLE:
-            if observation[2] > 0:
-                action = 1
-            else:
-                action = 0
-        else:
-            raise("Unknown policy")
+        action = agent.action(observation, reward)
 
         # print(env.observation_space.sample())
         observation, reward, terminated, truncated, info = env.step(action)
@@ -81,16 +94,16 @@ def run_env_with_policy(env, policy):
             observation, info = env.reset()
     return run_lengths
 
-def multi_run(policies):
+def multi_run(agent_classes):
     env = gym.make("CartPole-v1")
     run_lengths = []
 
-    for policy in policies:
-        policy_run_lengths = run_env_with_policy(env, policy)
-        run_lengths.append(policy_run_lengths)
+    for agent_class in agent_classes:
+        agent_run_lengths = run_env_with_agent(env, agent_class)
+        run_lengths.append(agent_run_lengths)
 
     print(run_lengths)
 
     env.close()
 
-multi_run([ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE])
+multi_run([LeftAgent, RightAgent, RandomAgent, WiggleAgent])
