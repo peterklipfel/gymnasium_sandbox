@@ -1,15 +1,3 @@
-# SNN-related imports
-import snntorch as snn
-from snntorch import spikeplot as splt
-from snntorch import spikegen
-from snntorch import utils
-from snntorch import surrogate
-import snntorch.functional as SF
-
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-
 import matplotlib.pyplot as plt
 import numpy as np
 import itertools
@@ -18,7 +6,7 @@ import itertools
 import gymnasium as gym
 
 from basic_agents import LeftAgent, RightAgent, WiggleAgent, RandomAgent
-from agent import Agent
+from dqn_agent import DQNAgent
 
 
 def run_env_with_agent(env, agent_class):
@@ -61,3 +49,4 @@ def multi_run(agent_classes):
     env.close()
 
 multi_run([LeftAgent, RightAgent, RandomAgent, WiggleAgent])
+
