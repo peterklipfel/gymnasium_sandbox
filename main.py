@@ -2,6 +2,9 @@
 import snntorch as snn
 from snntorch import spikeplot as splt
 from snntorch import spikegen
+from snntorch import utils
+from snntorch import surrogate
+import snntorch.functional as SF
 
 import torch
 import torch.nn as nn
@@ -14,57 +17,9 @@ import itertools
 # Environment imports
 import gymnasium as gym
 
-## OOPy bits
-from abc import ABC, abstractmethod
+from basic_agents import LeftAgent, RightAgent, WiggleAgent, RandomAgent
+from agent import Agent
 
-
-# Network Architecture
-num_inputs = 4
-num_hidden = 1000
-num_outputs = 2
-
-# Temporal Dynamics
-num_steps = 25
-beta = 0.95
-
-
-# ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE = ['left', 'right', 'random', 'wiggle']
-# run_lengths = {ONLY_LEFT: [], ONLY_RIGHT: [], RANDOM: [], WIGGLE: []}
-
-ONLY_LEFT, ONLY_RIGHT, RANDOM, WIGGLE = [0, 1, 2, 3]
-
-class Agent(ABC):
-    def __init__(self, env):
-        self.env = env
-        super().__init__()
-
-    @abstractmethod
-    def action(observation, reward=None):
-        raise(f'{cls} does not implement #action method')
-
-
-class SNNAgent(Agent):
-    def action(self, observation, reward=None):
-        return 1
-
-class LeftAgent(Agent):
-    def action(self, observation, reward=None):
-        return 0
-
-class RightAgent(Agent):
-    def action(self, observation, reward=None):
-        return 0
-
-class RandomAgent(Agent):
-    def action(self, observation, reward=None):
-        return self.env.action_space.sample()
-
-class WiggleAgent(Agent):
-    def action(self, observation, reward=None):
-        if observation[2] > 0:
-            return 1
-        else:
-            return 0
 
 def run_env_with_agent(env, agent_class):
     agent = agent_class(env)
@@ -76,11 +31,10 @@ def run_env_with_agent(env, agent_class):
 
     run_lengths = []
     observation, info = env.reset()
-    reward = None
 
     for _ in range(1000):
 
-        action = agent.action(observation, reward)
+        action = agent.action(observation, total_reward_for_run)
 
         # print(env.observation_space.sample())
         observation, reward, terminated, truncated, info = env.step(action)
