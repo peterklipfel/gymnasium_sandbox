@@ -15,25 +15,32 @@ def run_env_with_agent(env, agent_class):
     # the reward algo for cartpole is +1 for every tick that the pole is not
     # reset. We need to track this manually. I would have expected gymnasium
     # to do that for us, but it doesn't
-    total_reward_for_run = 0 
+    steps_in_current_run = 0
 
     run_lengths = []
     observation, info = env.reset()
 
-    for _ in range(1000):
+    for _ in range(100000):
+        steps_in_current_run += 1
 
-        action = agent.action(observation, total_reward_for_run)
+        action = agent.action(observation)
 
-        # print(env.observation_space.sample())
-        observation, reward, terminated, truncated, info = env.step(action)
+        next_obs, reward, terminated, truncated, info = env.step(action)
 
-        total_reward_for_run += reward
-        if terminated:
-            run_lengths.append(total_reward_for_run)
-            total_reward_for_run = 0
+        if terminated or truncated:
+            run_lengths.append(steps_in_current_run)
+            steps_in_current_run = 0
+            reward = -reward # ensure negative reinforcement
         
+        agent.save_observation(observation, action, reward, next_obs, terminated)
+
+        observation = next_obs
+
         if terminated or truncated:
             observation, info = env.reset()
+            print(f"average: {np.average(run_lengths)} over {len(run_lengths)} runs")
+        agent.train()
+        
     return run_lengths
 
 def multi_run(agent_classes):
@@ -48,5 +55,11 @@ def multi_run(agent_classes):
 
     env.close()
 
-multi_run([LeftAgent, RightAgent, RandomAgent, WiggleAgent])
+# multi_run([LeftAgent, RightAgent, RandomAgent, WiggleAgent])
 
+multi_run([DQNAgent])
+
+# multi_run([WiggleAgent])
+
+# from tensorflow.python.client import device_lib
+# print(device_lib.list_local_devices())
