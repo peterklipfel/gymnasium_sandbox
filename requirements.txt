@@ -1,3 +1,5 @@
 gymnasium[all]
 snntorch
 jupyterlab
+keras
+tensorflow==2.10
